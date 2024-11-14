@@ -1,26 +1,39 @@
 <template>
-  <img alt="Vue logo" src="./assets/logo.png" />
-  <HelloWorld msg="Welcome to Your Vue.js App" />
+  <div id="app">
+    <nav-bar />
+    <router-view />
+  </div>
 </template>
 
 <script>
-import HelloWorld from "./components/HelloWorld.vue";
+import NavBar from "@/components/NavBar.vue";
 
 export default {
   name: "App",
   components: {
-    HelloWorld,
+    NavBar,
+  },
+
+  methods: {
+    addToCart(lesson) {
+      this.cartItems.push({ ...lesson });
+      // Update lesson spaces
+      const lessonIndex = this.lessons.findIndex((l) => l.id === lesson.id);
+      if (lessonIndex !== -1) {
+        this.lessons[lessonIndex].spaces--;
+      }
+    },
+    removeFromCart(lessonId) {
+      const index = this.cartItems.findIndex((item) => item.id === lessonId);
+      if (index !== -1) {
+        // Restore lesson space
+        const lessonIndex = this.lessons.findIndex((l) => l.id === lessonId);
+        if (lessonIndex !== -1) {
+          this.lessons[lessonIndex].spaces++;
+        }
+        this.cartItems.splice(index, 1);
+      }
+    },
   },
 };
 </script>
-
-<style>
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
-}
-</style>
