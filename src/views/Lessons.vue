@@ -1,22 +1,12 @@
 <template>
   <div class="lessons-container">
-    <search-sort-bar
-      :sort-by="sortBy"
-      :sort-order="sortOrder"
-      @search="handleSearch"
-      @update-sort="updateSort"
-    />
+    <search-sort-bar @search="handleSearch" @update-sort="updateSort" />
     <lesson-list
       :lessons="lessons"
       :loading="loading"
       :error="error"
       @add-to-cart="addToCart"
     />
-    <!-- Cart Preview -->
-    <div v-if="cart.length > 0" class="cart-preview">
-      <h3>Cart ({{ cart.length }} items)</h3>
-      <button @click="$router.push('/cart')">View Cart</button>
-    </div>
   </div>
 </template>
 
@@ -121,25 +111,25 @@ export default {
       cart: [],
       loading: false,
       error: null,
-      sortBy: "subject",
-      sortOrder: "asc",
-      searchQuery: "",
-      searchFilters: {
-        subject: true,
-        location: true,
-      },
     };
   },
 
-  computed: {
-    sortedAndFilteredLessons() {
-      return this.lessons;
-      let filteredLessons = this.filterLessons(this.lessons);
-      return this.sortLessons(filteredLessons);
-    },
-  },
+  computed: {},
 
   methods: {
+    sortLessons(sortKey, sortOrder = "asc") {
+      this.lessons = this.lessons.sort((a, b) => {
+        if (typeof a[sortKey] === "string") {
+          // Case-insensitive string comparison
+          const result = a[sortKey].localeCompare(b[sortKey]);
+          return sortOrder === "asc" ? result : -result;
+        } else {
+          // Numeric or other type comparison
+          const result = a[sortKey] - b[sortKey];
+          return sortOrder === "asc" ? result : -result;
+        }
+      });
+    },
     async fetchLessons() {
       this.loading = true;
       this.error = null;
@@ -154,44 +144,12 @@ export default {
       }
     },
 
-    handleSearch({ query, filters }) {
-      this.searchQuery = query;
-      this.searchFilters = filters;
+    handleSearch(term) {
+      console.log("Search term:", term);
     },
 
     updateSort({ sortBy, sortOrder }) {
-      this.sortBy = sortBy;
-      this.sortOrder = sortOrder;
-    },
-
-    filterLessons(lessons) {
-      if (!this.searchQuery) return lessons;
-
-      const query = this.searchQuery.toLowerCase();
-      return lessons.filter((lesson) => {
-        if (this.searchFilters.subject && lesson.subject.toLowerCase().includes(query)) {
-          return true;
-        }
-        if (
-          this.searchFilters.location &&
-          lesson.location.toLowerCase().includes(query)
-        ) {
-          return true;
-        }
-        return false;
-      });
-    },
-
-    sortLessons(lessons) {
-      return [...lessons].sort((a, b) => {
-        let comparison = 0;
-        if (this.sortBy === "price" || this.sortBy === "spaces") {
-          comparison = a[this.sortBy] - b[this.sortBy];
-        } else {
-          comparison = a[this.sortBy].localeCompare(b[this.sortBy]);
-        }
-        return this.sortOrder === "asc" ? comparison : -comparison;
-      });
+      this.sortLessons(sortBy, sortOrder);
     },
 
     addToCart(lesson) {
@@ -206,7 +164,7 @@ export default {
     },
   },
 
-  created() {
+  mounted() {
     // this.fetchLessons();
   },
 };

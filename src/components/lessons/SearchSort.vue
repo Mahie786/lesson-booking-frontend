@@ -22,8 +22,8 @@
             <div>
               <label class="form-label text-muted small mb-2">Sort by:</label>
               <select
-                :value="sortBy"
-                @change="$emit('update-sort', $event, 'sortBy')"
+                v-model="sortBy"
+                @change="onChangeSort"
                 class="form-select form-select-sm"
               >
                 <option value="subject">Subject</option>
@@ -36,8 +36,8 @@
             <div>
               <label class="form-label text-muted small mb-2">Order:</label>
               <select
-                :value="sortOrder"
-                @change="$emit('update-sort', $event, 'sortOrder')"
+                v-model="sortOrder"
+                @change="onChangeSort"
                 class="form-select form-select-sm"
               >
                 <option value="asc">Ascending</option>
@@ -53,25 +53,20 @@
 
 <script>
 export default {
-  props: {
-    sortBy: String,
-    sortOrder: String,
-  },
   data() {
     return {
+      sortBy: "subject",
+      sortOrder: "asc",
       searchTerm: "",
-      filters: {
-        subject: false,
-        location: false,
-      },
     };
   },
   methods: {
     handleSearch() {
-      this.$emit("search", {
-        term: this.searchTerm,
-        filters: this.filters,
-      });
+      this.$emit("search", this.searchTerm);
+    },
+
+    onChangeSort() {
+      this.$emit("update-sort", { sortBy: this.sortBy, sortOrder: this.sortOrder });
     },
   },
 };
