@@ -19,15 +19,21 @@ export default {
       }
     },
 
+    UPDATE_QUANTITY(state, { lessonId, quantity }) {
+      const item = state.items.find((item) => item.id === lessonId);
+      if (item) {
+        item.quantity = quantity;
+        localStorage.setItem("cart", JSON.stringify(state.items));
+      }
+    },
+
     REMOVE_FROM_CART(state, lessonId) {
       state.items = state.items.filter((item) => item.id !== lessonId);
-      // Update localStorage
       localStorage.setItem("cart", JSON.stringify(state.items));
     },
 
     CLEAR_CART(state) {
       state.items = [];
-      // Clear localStorage
       localStorage.removeItem("cart");
     },
 
@@ -57,12 +63,60 @@ export default {
       localStorage.setItem("cart", JSON.stringify(state.items));
     },
 
+    updateQuantity({ commit, state }, { lessonId, quantity }) {
+      const item = state.items.find((item) => item.id === lessonId);
+      if (item && quantity >= 1 && quantity <= item.spaces) {
+        commit("UPDATE_QUANTITY", { lessonId, quantity });
+      } else {
+        commit("SET_ERROR", "Invalid quantity update");
+      }
+    },
+
     removeFromCart({ commit }, lessonId) {
       commit("REMOVE_FROM_CART", lessonId);
     },
 
     clearCart({ commit }) {
       commit("CLEAR_CART");
+    },
+
+    async checkout({ commit, state, getters }, customerInfo) {
+      try {
+        commit("SET_LOADING", true);
+        commit("SET_ERROR", null);
+
+        // Create order object
+        const order = {
+          orderId: `ORD-${Date.now()}`,
+          orderDate: new Date().toISOString(),
+          items: [...state.items],
+          customer: customerInfo,
+          subtotal: getters.cartTotal,
+          total: getters.cartTotal,
+          status: "completed",
+        };
+
+        // Simulate API call to process order
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+
+        alert("Order processed successfully!");
+
+        // Clear the cart after successful checkout
+        commit("CLEAR_CART");
+
+        return {
+          success: true,
+          order,
+        };
+      } catch (error) {
+        commit("SET_ERROR", "Checkout failed. Please try again.");
+        return {
+          success: false,
+          error: error.message,
+        };
+      } finally {
+        commit("SET_LOADING", false);
+      }
     },
   },
 
@@ -89,16 +143,5 @@ export default {
         0
       );
     },
-
-    formattedCartTotal: (_, getters) => {
-      return new Intl.NumberFormat("en-GB", {
-        style: "currency",
-        currency: "GBP",
-      }).format(getters.cartTotal);
-    },
-
-    cartTax: (_, getters) => getters.cartTotal * 0.2,
-
-    cartTotalWithTax: (_, getters) => getters.cartTotal + getters.cartTax,
   },
 };

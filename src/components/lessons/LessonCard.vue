@@ -6,9 +6,9 @@
     <div
       class="card-header bg-gradient d-flex justify-content-between align-items-center py-3"
     >
-      <h5 class="card-title text-white mb-0">{{ lesson.subject }}</h5>
+      <h5 class="card-title mb-0">{{ lesson.subject }}</h5>
       <div class="subject-icon me-3">
-        <i :class="lesson.icon" class="fs-3 text-white"></i>
+        <i :class="lesson.icon" class="fs-3"></i>
       </div>
     </div>
 
@@ -33,7 +33,7 @@
           </div>
           <div>
             <small class="text-muted d-block">Price</small>
-            <span class="fw-medium">£{{ formatPrice(lesson.price) }}</span>
+            <span class="fw-medium">£{{ lesson.price }}</span>
           </div>
         </div>
 

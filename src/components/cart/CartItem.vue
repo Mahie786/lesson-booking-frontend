@@ -43,17 +43,17 @@
               <i class="bi bi-plus"></i>
             </button>
           </div>
-          <small v-if="item.quantity >= item.spaces" class="text-danger mt-1 d-block">
+          <!-- <small v-if="item.quantity >= item.spaces" class="text-danger mt-1 d-block">
             Maximum available reached
-          </small>
+          </small> -->
         </div>
 
         <!-- Price and Remove -->
         <div class="price-remove-section text-end">
           <div class="price-section mb-2">
-            <div class="fw-bold">£{{ formatPrice(totalPrice) }}</div>
+            <div class="fw-bold">£{{ totalPrice }}</div>
             <small class="text-muted" v-if="item.quantity > 1">
-              £{{ formatPrice(item.price) }} each
+              £{{ item.price }} each
             </small>
           </div>
           <button
@@ -98,20 +98,11 @@ export default {
   },
 
   methods: {
-    formatPrice(price) {
-      return price.toLocaleString("en-GB", {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
+    updateQuantity(quantity) {
+      this.$store.dispatch("cart/updateQuantity", {
+        lessonId: this.item.id,
+        quantity: quantity,
       });
-    },
-
-    updateQuantity(newQuantity) {
-      if (newQuantity >= 1 && newQuantity <= this.item.spaces) {
-        this.$emit("update-quantity", {
-          id: this.item.id,
-          quantity: newQuantity,
-        });
-      }
     },
 
     removeItem() {

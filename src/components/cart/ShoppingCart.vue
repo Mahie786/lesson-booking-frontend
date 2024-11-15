@@ -40,7 +40,11 @@
                 :key="item.id"
                 class="cart-item p-3 mb-3 bg-light rounded"
               >
-                <cartItem :item="item" @remove="handleRemoveItem" />
+                <cartItem
+                  :item="item"
+                  @remove="handleRemoveItem"
+                  @update-quantity="handleUpdateQuantity"
+                />
               </div>
             </div>
           </div>
@@ -55,18 +59,18 @@
 
             <!-- Price Summary -->
             <div class="price-summary mb-4">
-              <div class="d-flex justify-content-between mb-2">
+              <!-- <div class="d-flex justify-content-between mb-2">
                 <span class="text-muted">Subtotal</span>
                 <span>{{ formattedCartTotal }}</span>
-              </div>
-              <div class="d-flex justify-content-between mb-2">
+              </div> -->
+              <!-- <div class="d-flex justify-content-between mb-2">
                 <span class="text-muted">VAT (20%)</span>
                 <span>{{ formattedTax }}</span>
-              </div>
-              <hr />
+              </div> -->
+              <!-- <hr /> -->
               <div class="d-flex justify-content-between mb-3">
                 <span class="fw-bold">Total</span>
-                <span class="fw-bold">{{ formattedTotalWithTax }}</span>
+                <span class="fw-bold">{{ cartTotal }}</span>
               </div>
             </div>
 
@@ -141,28 +145,7 @@ export default {
 
   computed: {
     ...mapState("cart", ["error"]),
-    ...mapGetters("cart", [
-      "sortedCartItems",
-      "hasItems",
-      "cartItemCount",
-      "formattedCartTotal",
-      "cartTax",
-      "cartTotalWithTax",
-    ]),
-
-    formattedTax() {
-      return new Intl.NumberFormat("en-GB", {
-        style: "currency",
-        currency: "GBP",
-      }).format(this.cartTax);
-    },
-
-    formattedTotalWithTax() {
-      return new Intl.NumberFormat("en-GB", {
-        style: "currency",
-        currency: "GBP",
-      }).format(this.cartTotalWithTax);
-    },
+    ...mapGetters("cart", ["sortedCartItems", "hasItems", "cartItemCount", "cartTotal"]),
 
     isFormValid() {
       return (
@@ -177,6 +160,32 @@ export default {
   methods: {
     ...mapActions("cart", ["removeFromCart", "clearCart"]),
 
+    async handleCheckout() {
+      if (!this.validateForm()) return;
+
+      try {
+        const customerInfo = {
+          name: this.checkoutForm.name,
+          phone: this.checkoutForm.phone,
+          checkoutDate: new Date().toISOString(),
+        };
+
+        const result = await this.$store.dispatch("cart/checkout", customerInfo);
+
+        if (result.success) {
+          // Show success message
+          this.$router.push({
+            name: "checkout-success",
+            params: { orderId: result.order.orderId },
+          });
+        } else {
+          // Handle error
+          console.error("Checkout failed:", result.error);
+        }
+      } catch (error) {
+        console.error("Checkout error:", error);
+      }
+    },
     validateForm() {
       let isValid = true;
       this.errors = {
@@ -223,11 +232,10 @@ export default {
         await new Promise((resolve) => setTimeout(resolve, 1000));
 
         const order = {
-          items: this.sortedCartItems,
-          customer: this.checkoutForm,
+          items: this.sortedCartItems.map((item) => item.id),
+          name: this.checkoutForm.name,
+          phone: this.checkoutForm.phone,
           total: this.cartTotalWithTax,
-          tax: this.cartTax,
-          orderId: Date.now(),
           orderDate: new Date().toISOString(),
         };
 
@@ -243,7 +251,9 @@ export default {
         };
 
         // Show success message or redirect
-        this.$router.push("/checkout-success");
+        // this.$router.push("/checkout-success");
+
+        alert("Order placed successfully!");
       } catch (error) {
         console.error("Checkout failed:", error);
       } finally {

@@ -55,8 +55,21 @@ export default {
       }
     },
 
-    updateSearch({ commit }, term) {
+    async updateSearch({ commit }, term) {
+      commit("SET_LOADING", true);
+      commit("SET_ERROR", null);
       commit("SET_SEARCH_TERM", term);
+
+      try {
+        // const response = await fetch("/api/lessons?search=" + term);
+        // const data = await response.json();
+        // commit("SET_LESSONS", data);
+      } catch (error) {
+        commit("SET_ERROR", "Failed to load lessons");
+        console.error("Error fetching lessons:", error);
+      } finally {
+        commit("SET_LOADING", false);
+      }
     },
 
     updateSort({ commit }, sortData) {
@@ -65,23 +78,24 @@ export default {
     },
 
     decrementSpaces({ commit }, lessonId) {
-      commit("DECREMENT_SPACES", lessonId);
+      try {
+        commit("DECREMENT_SPACES", lessonId);
+
+        // const response = await fetch("/api/lessons?search=" + term);
+        // const data = await response.json();
+        // commit("SET_LESSONS", data);
+      } catch (error) {
+        commit("SET_ERROR", "Failed to load lessons");
+        console.error("Error fetching lessons:", error);
+      } finally {
+        commit("SET_LOADING", false);
+      }
     },
   },
 
   getters: {
     filteredLessons: (state) => {
       let filtered = [...state.lessons];
-
-      // Apply search filter
-      if (state.searchTerm) {
-        const searchLower = state.searchTerm.toLowerCase();
-        filtered = filtered.filter(
-          (lesson) =>
-            lesson.subject.toLowerCase().includes(searchLower) ||
-            lesson.location.toLowerCase().includes(searchLower)
-        );
-      }
 
       // Apply sorting
       filtered.sort((a, b) => {
