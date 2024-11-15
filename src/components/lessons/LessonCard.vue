@@ -2,16 +2,14 @@
   <div
     class="lesson-card card h-100 border-0 shadow-sm hover-effect rounded-4 overflow-hidden"
   >
+    <!-- Card Header -->
     <div
       class="card-header bg-gradient d-flex justify-content-between align-items-center py-3"
     >
-      <h5 class="card-title text-black mb-0">{{ lesson.subject }}</h5>
+      <h5 class="card-title text-white mb-0">{{ lesson.subject }}</h5>
       <div class="subject-icon me-3">
-        <i :class="lesson?.icon" class="fs-3"></i>
+        <i :class="lesson.icon" class="fs-3 text-white"></i>
       </div>
-      <!-- <div class="icon-wrapper rounded-circle">
-        <i :class="lesson.icon" class="fs-4 text-black text-primary"></i>
-      </div> -->
     </div>
 
     <!-- Card Body -->
@@ -19,7 +17,7 @@
       <div class="info-list">
         <!-- Location Info -->
         <div class="info-item d-flex align-items-center mb-3">
-          <div class="me-3">
+          <div class="info-icon me-3">
             <i class="bi bi-geo-alt-fill text-primary"></i>
           </div>
           <div>
@@ -30,23 +28,25 @@
 
         <!-- Price Info -->
         <div class="info-item d-flex align-items-center mb-3">
-          <div class="me-3">
+          <div class="info-icon me-3">
             <i class="bi bi-tag-fill text-primary"></i>
           </div>
           <div>
             <small class="text-muted d-block">Price</small>
-            <span class="fw-medium">£{{ lesson.price }}</span>
+            <span class="fw-medium">£{{ formatPrice(lesson.price) }}</span>
           </div>
         </div>
 
         <!-- Spaces Info -->
         <div class="info-item d-flex align-items-center">
-          <div class="me-3">
-            <i class="bi bi-people-fill text-primary"></i>
+          <div class="info-icon me-3">
+            <i class="bi bi-people-fill" :class="spacesColorClass"></i>
           </div>
           <div>
             <small class="text-muted d-block">Available Spaces</small>
-            <span class="fw-medium">{{ lesson.spaces }}</span>
+            <span class="fw-medium" :class="spacesColorClass">
+              {{ lesson.spaces }}
+            </span>
           </div>
         </div>
       </div>
@@ -55,37 +55,83 @@
     <!-- Card Footer -->
     <div class="card-footer border-0 bg-transparent p-4">
       <button
-        @click="$emit('add-to-cart', lesson)"
-        :disabled="!hasAvailableSpaces"
+        @click="handleAddToCart"
+        :disabled="!hasAvailableSpaces || isInCart"
         class="btn w-100 position-relative overflow-hidden"
         :class="buttonClasses"
       >
         <span class="btn-text">{{ buttonText }}</span>
-        <i class="bi bi-cart-plus position-absolute end-0 me-3"></i>
+        <i class="bi position-absolute end-0 me-3" :class="cartIconClass"></i>
       </button>
     </div>
   </div>
 </template>
 
 <script>
+import { mapGetters } from "vuex";
+
 export default {
   name: "LessonCard",
+
   props: {
     lesson: {
       type: Object,
       required: true,
+      validator(obj) {
+        return ["id", "subject", "location", "price", "spaces", "icon"].every(
+          (prop) => prop in obj
+        );
+      },
     },
   },
-  emits: ["add-to-cart"],
+
   computed: {
+    ...mapGetters("cart", ["isLessonInCart"]),
+
     hasAvailableSpaces() {
       return this.lesson.spaces > 0;
     },
-    buttonText() {
-      return this.hasAvailableSpaces ? "Add to Cart" : "No Spaces Left";
+
+    isInCart() {
+      return this.isLessonInCart(this.lesson.id);
     },
+
+    buttonText() {
+      if (this.isInCart) return "In Cart";
+      if (!this.hasAvailableSpaces) return "No Spaces Left";
+      return "Add to Cart";
+    },
+
     buttonClasses() {
-      return this.hasAvailableSpaces ? "btn-primary" : "btn-secondary opacity-50";
+      if (this.isInCart) return "btn-success";
+      if (!this.hasAvailableSpaces) return "btn-secondary opacity-50";
+      return "btn-primary";
+    },
+
+    cartIconClass() {
+      if (this.isInCart) return "bi-check-circle";
+      return "bi-cart-plus";
+    },
+
+    spacesColorClass() {
+      if (this.lesson.spaces === 0) return "text-danger";
+      if (this.lesson.spaces <= 2) return "text-warning";
+      return "text-primary";
+    },
+  },
+
+  methods: {
+    formatPrice(price) {
+      return price.toLocaleString("en-GB", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      });
+    },
+
+    handleAddToCart() {
+      if (this.hasAvailableSpaces && !this.isInCart) {
+        this.$emit("add-to-cart", this.lesson);
+      }
     },
   },
 };
@@ -94,7 +140,7 @@ export default {
 <style scoped>
 .lesson-card {
   transition: all 0.3s ease;
-  position: relative; /* Add this */
+  position: relative;
 }
 
 .hover-effect:hover {
@@ -105,8 +151,8 @@ export default {
 .card-header {
   background: linear-gradient(45deg, #007bff, #0056b3);
   border-bottom: none;
-  position: relative; /* Add this */
-  z-index: 1; /* Add this */
+  position: relative;
+  z-index: 1;
 }
 
 .info-icon {
@@ -131,9 +177,21 @@ export default {
   border: none;
 }
 
+.btn-success {
+  background: linear-gradient(45deg, #28a745, #1e7e34);
+  border: none;
+}
+
+.btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+}
+
 .btn-primary:hover:not(:disabled) {
   background: linear-gradient(45deg, #0056b3, #004085);
-  transform: translateY(-2px);
+}
+
+.btn-success:hover:not(:disabled) {
+  background: linear-gradient(45deg, #1e7e34, #145523);
 }
 
 .btn i {
@@ -142,7 +200,7 @@ export default {
   transition: all 0.3s ease;
 }
 
-.btn:hover i {
+.btn:hover:not(:disabled) i {
   animation: slideIn 0.3s forwards;
 }
 
@@ -157,26 +215,19 @@ export default {
   }
 }
 
-.card-header {
-  background: linear-gradient(45deg, #007bff, #0056b3);
-  border-bottom: none;
-  position: relative;
-  z-index: 1;
-  color: white; /* Add this to ensure all text in header is white */
-}
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .card-body {
+    padding: 1rem;
+  }
 
-.icon-wrapper {
-  width: 40px;
-  height: 40px;
-  background: rgba(255, 255, 255, 0.2);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white !important; /* Added !important to ensure icon color */
-}
+  .info-icon {
+    width: 30px;
+    height: 30px;
+  }
 
-.icon-wrapper:hover {
-  background: rgba(255, 255, 255, 0.3);
-  transform: rotate(12deg);
+  .btn {
+    padding: 0.6rem 1.2rem;
+  }
 }
 </style>

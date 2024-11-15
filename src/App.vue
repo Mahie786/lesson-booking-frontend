@@ -14,6 +14,9 @@ export default {
     NavBar,
   },
 
+  mounted() {
+    this.$store.dispatch("cart/initializeCart");
+  },
   methods: {
     addToCart(lesson) {
       this.cartItems.push({ ...lesson });

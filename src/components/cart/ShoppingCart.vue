@@ -1,13 +1,32 @@
 <template>
   <div class="container py-4">
-    <h2 class="mb-4 fw-bold">Shopping Cart</h2>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h2 class="fw-bold mb-0">Shopping Cart</h2>
+      <button v-if="hasItems" @click="clearCart" class="btn btn-outline-danger btn-sm">
+        <i class="bi bi-trash me-2"></i>Clear Cart
+      </button>
+    </div>
+
+    <!-- Loading State -->
+    <div v-if="loading" class="text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+    </div>
+
+    <!-- Error State -->
+    <div v-else-if="error" class="alert alert-danger" role="alert">
+      {{ error }}
+    </div>
 
     <!-- Empty Cart State -->
-    <div v-if="cartItems.length == 0" class="text-center py-5">
+    <div v-else-if="!hasItems" class="text-center py-5">
       <i class="bi bi-cart-x display-1 text-muted"></i>
       <h3 class="mt-3">Your cart is empty</h3>
       <p class="text-muted mb-4">Add some lessons to get started</p>
-      <router-link to="/lessons" class="btn btn-primary"> Browse Lessons </router-link>
+      <router-link to="/lessons" class="btn btn-primary">
+        <i class="bi bi-book me-2"></i>Browse Lessons
+      </router-link>
     </div>
 
     <!-- Cart Items -->
@@ -17,11 +36,11 @@
           <div class="card-body">
             <div class="cart-items">
               <div
-                v-for="item in cartItems"
+                v-for="item in sortedCartItems"
                 :key="item.id"
                 class="cart-item p-3 mb-3 bg-light rounded"
               >
-                <cartItem :item="item" @remove="removeFromCart" />
+                <cartItem :item="item" @remove="handleRemoveItem" />
               </div>
             </div>
           </div>
@@ -32,7 +51,26 @@
       <div class="col-lg-4">
         <div class="card border-0 shadow-sm">
           <div class="card-body">
-            <h5 class="card-title mb-4">Checkout</h5>
+            <h5 class="card-title mb-4">Order Summary</h5>
+
+            <!-- Price Summary -->
+            <div class="price-summary mb-4">
+              <div class="d-flex justify-content-between mb-2">
+                <span class="text-muted">Subtotal</span>
+                <span>{{ formattedCartTotal }}</span>
+              </div>
+              <div class="d-flex justify-content-between mb-2">
+                <span class="text-muted">VAT (20%)</span>
+                <span>{{ formattedTax }}</span>
+              </div>
+              <hr />
+              <div class="d-flex justify-content-between mb-3">
+                <span class="fw-bold">Total</span>
+                <span class="fw-bold">{{ formattedTotalWithTax }}</span>
+              </div>
+            </div>
+
+            <!-- Checkout Form -->
             <form @submit.prevent="handleCheckout">
               <div class="mb-3">
                 <label class="form-label">Name</label>
@@ -40,26 +78,32 @@
                   type="text"
                   v-model="checkoutForm.name"
                   class="form-control"
+                  :class="{ 'is-invalid': errors.name }"
                   required
                 />
+                <div class="invalid-feedback">{{ errors.name }}</div>
               </div>
+
               <div class="mb-3">
                 <label class="form-label">Phone</label>
                 <input
                   type="tel"
                   v-model="checkoutForm.phone"
                   class="form-control"
+                  :class="{ 'is-invalid': errors.phone }"
                   required
                 />
+                <div class="invalid-feedback">{{ errors.phone }}</div>
               </div>
+
               <div class="d-grid gap-2">
-                <div class="d-flex justify-content-between mb-3">
-                  <span>Total:</span>
-                  <span class="fw-bold">${{ totalPrice }}</span>
-                </div>
-                <button type="submit" class="btn btn-primary">
+                <button
+                  type="submit"
+                  class="btn btn-primary"
+                  :disabled="loading || !isFormValid"
+                >
                   <i class="bi bi-credit-card me-2"></i>
-                  Checkout
+                  Checkout ({{ cartItemCount }} items)
                 </button>
               </div>
             </form>
@@ -71,62 +115,140 @@
 </template>
 
 <script>
+import { mapState, mapGetters, mapActions } from "vuex";
 import cartItem from "./CartItem.vue";
+
 export default {
-  components: { cartItem },
+  name: "CartView",
+
+  components: {
+    cartItem,
+  },
+
   data() {
     return {
-      cartItems: [
-        {
-          id: 1,
-          subject: "Math",
-          location: "London",
-          price: 140,
-          spaces: 5,
-          quantity: 1,
-          icon: "bi bi-calculator",
-        },
-        {
-          id: 2,
-          subject: "English",
-          location: "London",
-          price: 120,
-          spaces: 5,
-          quantity: 1,
-          icon: "bi bi-translate",
-        },
-        {
-          id: 3,
-          subject: "Physical Education",
-          location: "Manchester",
-          price: 150,
-          spaces: 3,
-          quantity: 1,
-          icon: "bi bi-bicycle",
-        },
-      ],
       checkoutForm: {
         name: "",
         phone: "",
       },
+      errors: {
+        name: "",
+        phone: "",
+      },
+      loading: false,
     };
   },
+
   computed: {
-    totalPrice() {
-      return this.cartItems.reduce((total, item) => total + item.price, 0);
+    ...mapState("cart", ["error"]),
+    ...mapGetters("cart", [
+      "sortedCartItems",
+      "hasItems",
+      "cartItemCount",
+      "formattedCartTotal",
+      "cartTax",
+      "cartTotalWithTax",
+    ]),
+
+    formattedTax() {
+      return new Intl.NumberFormat("en-GB", {
+        style: "currency",
+        currency: "GBP",
+      }).format(this.cartTax);
+    },
+
+    formattedTotalWithTax() {
+      return new Intl.NumberFormat("en-GB", {
+        style: "currency",
+        currency: "GBP",
+      }).format(this.cartTotalWithTax);
+    },
+
+    isFormValid() {
+      return (
+        this.checkoutForm.name &&
+        this.checkoutForm.phone &&
+        !this.errors.name &&
+        !this.errors.phone
+      );
     },
   },
+
   methods: {
-    removeFromCart(item) {
-      this.cartItems = this.cartItems.filter((cartItem) => cartItem.id !== item.id);
+    ...mapActions("cart", ["removeFromCart", "clearCart"]),
+
+    validateForm() {
+      let isValid = true;
+      this.errors = {
+        name: "",
+        phone: "",
+      };
+
+      // Name validation
+      if (!this.checkoutForm.name.trim()) {
+        this.errors.name = "Name is required";
+        isValid = false;
+      } else if (this.checkoutForm.name.length < 2) {
+        this.errors.name = "Name must be at least 2 characters";
+        isValid = false;
+      }
+
+      // Phone validation
+      const phoneRegex = /^[0-9]{10,}$/;
+      if (!this.checkoutForm.phone.trim()) {
+        this.errors.phone = "Phone number is required";
+        isValid = false;
+      } else if (!phoneRegex.test(this.checkoutForm.phone)) {
+        this.errors.phone = "Please enter a valid phone number";
+        isValid = false;
+      }
+
+      return isValid;
     },
-    handleCheckout() {
-      // Handle checkout logic here
-      console.log("Checkout:", {
-        items: this.cartItems,
-        customer: this.checkoutForm,
-        total: this.totalPrice,
-      });
+
+    async handleRemoveItem(item) {
+      try {
+        await this.removeFromCart(item.id);
+      } catch (error) {
+        console.error("Failed to remove item:", error);
+      }
+    },
+
+    async handleCheckout() {
+      if (!this.validateForm()) return;
+
+      this.loading = true;
+      try {
+        // Simulate API call
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+
+        const order = {
+          items: this.sortedCartItems,
+          customer: this.checkoutForm,
+          total: this.cartTotalWithTax,
+          tax: this.cartTax,
+          orderId: Date.now(),
+          orderDate: new Date().toISOString(),
+        };
+
+        console.log("Order placed:", order);
+
+        // Clear cart after successful checkout
+        await this.clearCart();
+
+        // Reset form
+        this.checkoutForm = {
+          name: "",
+          phone: "",
+        };
+
+        // Show success message or redirect
+        this.$router.push("/checkout-success");
+      } catch (error) {
+        console.error("Checkout failed:", error);
+      } finally {
+        this.loading = false;
+      }
     },
   },
 };
@@ -140,25 +262,36 @@ export default {
 
 .cart-item:hover {
   background-color: #f8f9fa !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-.subject-icon {
-  width: 50px;
-  height: 50px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: #e9ecef;
-  border-radius: 12px;
+.price-summary {
+  background-color: #f8f9fa;
+  padding: 1rem;
+  border-radius: 8px;
+}
+
+.btn-primary {
+  background: linear-gradient(45deg, #007bff, #0056b3);
+  border: none;
+  transition: all 0.3s ease;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: linear-gradient(45deg, #0056b3, #004085);
+  transform: translateY(-2px);
 }
 
 .btn-outline-danger {
   border-width: 1px;
+  transition: all 0.3s ease;
 }
 
 .btn-outline-danger:hover {
   background-color: #dc3545;
   color: white;
+  transform: translateY(-2px);
 }
 
 @media (max-width: 992px) {
