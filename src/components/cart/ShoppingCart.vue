@@ -70,7 +70,7 @@
               <!-- <hr /> -->
               <div class="d-flex justify-content-between mb-3">
                 <span class="fw-bold">Total</span>
-                <span class="fw-bold">{{ cartTotal }}</span>
+                <span class="fw-bold">£{{ cartTotal }}</span>
               </div>
             </div>
 

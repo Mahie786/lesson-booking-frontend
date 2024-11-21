@@ -28,7 +28,7 @@ export default {
       state.sortOrder = sortOrder;
     },
     DECREMENT_SPACES(state, lessonId) {
-      const lesson = state.lessons.find((l) => l.id === lessonId);
+      const lesson = state.lessons.find((l) => l._id === lessonId);
       if (lesson && lesson.spaces > 0) {
         lesson.spaces--;
       }
@@ -44,9 +44,16 @@ export default {
       commit("SET_LOADING", true);
       commit("SET_ERROR", null);
       try {
-        const response = await fetch("/api/lessons");
-        const data = await response.json();
-        commit("SET_LESSONS", data);
+        // Update URL to match your API
+        const response = await fetch(`${process.env.VUE_APP_API_URL}/lessons`);
+        const result = (await response.json()) || {};
+        console.log("result", result);
+        if (result?.success) {
+          // Access the data array from the API response
+          commit("SET_LESSONS", result?.data);
+        } else {
+          throw new Error("Failed to fetch lessons");
+        }
       } catch (error) {
         commit("SET_ERROR", "Failed to load lessons");
         console.error("Error fetching lessons:", error);
@@ -61,9 +68,17 @@ export default {
       commit("SET_SEARCH_TERM", term);
 
       try {
-        // const response = await fetch("/api/lessons?search=" + term);
-        // const data = await response.json();
-        // commit("SET_LESSONS", data);
+        const response = await fetch(
+          `${process.env.VUE_APP_API_URL}/lessons/search?searchString=${term}`
+        );
+
+        const result = (await response.json()) || {};
+        if (result?.success) {
+          // Access the data array from the API response
+          commit("SET_LESSONS", result?.data);
+        } else {
+          throw new Error("Failed to fetch lessons");
+        }
       } catch (error) {
         commit("SET_ERROR", "Failed to load lessons");
         console.error("Error fetching lessons:", error);
@@ -77,13 +92,26 @@ export default {
       commit("SET_SORT", sortData);
     },
 
-    decrementSpaces({ commit }, lessonId) {
+    async decrementSpaces({ commit }, lessonId) {
       try {
         commit("DECREMENT_SPACES", lessonId);
 
-        // const response = await fetch("/api/lessons?search=" + term);
-        // const data = await response.json();
-        // commit("SET_LESSONS", data);
+        const response = await fetch(
+          `${process.env.VUE_APP_API_URL}/lessons/${lessonId}`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              spaces: spaces - 1,
+            }),
+          }
+        );
+
+        console.log("response", response);
+        const data = await response?.data?.json();
+        commit("SET_LESSONS", data);
       } catch (error) {
         commit("SET_ERROR", "Failed to load lessons");
         console.error("Error fetching lessons:", error);

@@ -33,7 +33,7 @@ export default {
       "updateSearch",
       "updateSort",
       "decrementSpaces",
-      "initializeLessons",
+      "fetchLessons",
     ]),
     ...mapActions("cart", ["addToCart"]),
 
@@ -48,96 +48,13 @@ export default {
     handleAddToCart(lesson) {
       if (lesson.spaces > 0) {
         this.addToCart(lesson);
-        this.decrementSpaces(lesson.id);
+        this.decrementSpaces(lesson._id);
       }
     },
   },
 
   created() {
-    const initialLessons = [
-      {
-        id: 1,
-        subject: "Mathematics",
-        location: "London",
-        price: 100,
-        spaces: 0,
-        icon: "bi bi-calculator",
-      },
-      {
-        id: 2,
-        subject: "English",
-        location: "Manchester",
-        price: 90,
-        spaces: 3,
-        icon: "bi bi-book",
-      },
-      {
-        id: 3,
-        subject: "Biology",
-        location: "Birmingham",
-        price: 110,
-        spaces: 4,
-        icon: "bi bi-virus",
-      },
-      {
-        id: 4,
-        subject: "Music",
-        location: "London",
-        price: 100,
-        spaces: 5,
-        icon: "bi bi-music-note-beamed",
-      },
-      {
-        id: 5,
-        subject: "Geography",
-        location: "Manchester",
-        price: 90,
-        spaces: 3,
-        icon: "bi bi-globe",
-      },
-      {
-        id: 6,
-        subject: "Computer",
-        location: "Birmingham",
-        price: 110,
-        spaces: 4,
-        icon: "bi bi-laptop",
-      },
-      {
-        id: 7,
-        subject: "History",
-        location: "London",
-        price: 100,
-        spaces: 5,
-        icon: "bi bi-hourglass-split",
-      },
-      {
-        id: 8,
-        subject: "Art",
-        location: "Manchester",
-        price: 90,
-        spaces: 3,
-        icon: "bi bi-palette",
-      },
-      {
-        id: 9,
-        subject: "Physical Education",
-        location: "Birmingham",
-        price: 110,
-        spaces: 4,
-        icon: "bi bi-bicycle",
-      },
-      {
-        id: 10,
-        subject: "Languages",
-        location: "Birmingham",
-        price: 110,
-        spaces: 4,
-        icon: "bi bi-translate",
-      },
-    ];
-
-    this.initializeLessons(initialLessons);
+    this.fetchLessons();
   },
 };
 </script>

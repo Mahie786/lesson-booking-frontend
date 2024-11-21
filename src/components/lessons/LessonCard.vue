@@ -78,7 +78,7 @@ export default {
       type: Object,
       required: true,
       validator(obj) {
-        return ["id", "subject", "location", "price", "spaces", "icon"].every(
+        return ["_id", "subject", "location", "price", "spaces", "icon"].every(
           (prop) => prop in obj
         );
       },
@@ -93,7 +93,7 @@ export default {
     },
 
     isInCart() {
-      return this.isLessonInCart(this.lesson.id);
+      return this.isLessonInCart(this.lesson._id);
     },
 
     buttonText() {
@@ -121,12 +121,6 @@ export default {
   },
 
   methods: {
-    formatPrice(price) {
-      return price.toLocaleString("en-GB", {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      });
-    },
 
     handleAddToCart() {
       if (this.hasAvailableSpaces && !this.isInCart) {
