@@ -43,9 +43,6 @@
               <i class="bi bi-plus"></i>
             </button>
           </div>
-          <!-- <small v-if="item.quantity >= item.spaces" class="text-danger mt-1 d-block">
-            Maximum available reached
-          </small> -->
         </div>
 
         <!-- Price and Remove -->
@@ -79,34 +76,41 @@ export default {
       type: Object,
       required: true,
       validator: (obj) => {
-        return ["id", "subject", "location", "price", "spaces", "quantity", "icon"].every(
-          (prop) => prop in obj
-        );
+        return [
+          "_id",
+          "subject",
+          "location",
+          "price",
+          "spaces",
+          "quantity",
+          "icon",
+        ].every((prop) => prop in obj);
       },
     },
   },
 
   computed: {
     totalPrice() {
-      return this.item.price * this.item.quantity;
+      return this.item.price * (this.item.quantity || 1);
     },
 
     availableSpaces() {
-      const remaining = this.item.spaces - this.item.quantity;
-      return `${remaining} space${remaining !== 1 ? "s" : ""}`;
+      return `${this.item.spaces} space${this.item.spaces !== 1 ? "s" : ""}`;
     },
   },
 
   methods: {
-    updateQuantity(quantity) {
-      this.$store.dispatch("cart/updateQuantity", {
-        lessonId: this.item.id,
-        quantity: quantity,
-      });
+    updateQuantity(newQuantity) {
+      if (newQuantity >= 1 && newQuantity <= this.item.spaces) {
+        this.$store.dispatch("cart/updateQuantity", {
+          lessonId: this.item._id,
+          quantity: newQuantity,
+        });
+      }
     },
 
     removeItem() {
-      this.$emit("remove", this.item);
+      this.$store.dispatch("cart/removeFromCart", this.item._id);
     },
   },
 };

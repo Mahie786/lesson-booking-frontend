@@ -49,6 +49,7 @@ export default {
       if (lesson.spaces > 0) {
         this.addToCart(lesson);
         this.decrementSpaces(lesson._id);
+        this.fetchLessons();
       }
     },
   },

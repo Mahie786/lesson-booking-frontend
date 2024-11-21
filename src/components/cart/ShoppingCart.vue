@@ -149,10 +149,11 @@ export default {
 
     isFormValid() {
       return (
-        this.checkoutForm.name &&
-        this.checkoutForm.phone &&
-        !this.errors.name &&
-        !this.errors.phone
+        // this.checkoutForm.name &&
+        // this.checkoutForm.phone &&
+        // !this.errors.name &&
+        // !this.errors.phone
+        true
       );
     },
   },
@@ -203,14 +204,14 @@ export default {
       }
 
       // Phone validation
-      const phoneRegex = /^[0-9]{10,}$/;
-      if (!this.checkoutForm.phone.trim()) {
-        this.errors.phone = "Phone number is required";
-        isValid = false;
-      } else if (!phoneRegex.test(this.checkoutForm.phone)) {
-        this.errors.phone = "Please enter a valid phone number";
-        isValid = false;
-      }
+      // const phoneRegex = /^[0-9]{10,}$/;
+      // if (!this.checkoutForm.phone.trim()) {
+      //   this.errors.phone = "Phone number is required";
+      //   isValid = false;
+      // } else if (!phoneRegex.test(this.checkoutForm.phone)) {
+      //   this.errors.phone = "Please enter a valid phone number";
+      //   isValid = false;
+      // }
 
       return isValid;
     },
@@ -228,34 +229,24 @@ export default {
 
       this.loading = true;
       try {
-        // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-
-        const order = {
-          items: this.sortedCartItems.map((item) => item.id),
+        // Prepare order data according to required format
+        const customerInfo = {
           name: this.checkoutForm.name,
           phone: this.checkoutForm.phone,
-          total: this.cartTotalWithTax,
-          orderDate: new Date().toISOString(),
         };
 
-        console.log("Order placed:", order);
+        // Dispatch checkout action
+        const result = await this.$store.dispatch("cart/checkout", customerInfo);
 
-        // Clear cart after successful checkout
-        await this.clearCart();
-
-        // Reset form
-        this.checkoutForm = {
-          name: "",
-          phone: "",
-        };
-
-        // Show success message or redirect
-        // this.$router.push("/checkout-success");
-
-        alert("Order placed successfully!");
+        if (result.success) {
+          this.checkoutForm = { name: "", phone: "" };
+          // this.$router.push("/lessons");
+        } else {
+          throw new Error(result.error || "Checkout failed");
+        }
       } catch (error) {
         console.error("Checkout failed:", error);
+        this.errors.submit = error.message;
       } finally {
         this.loading = false;
       }

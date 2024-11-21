@@ -9,18 +9,19 @@ export default {
 
   mutations: {
     ADD_TO_CART(state, lesson) {
-      const existingItem = state.items.find((item) => item.id === lesson.id);
+      const existingItem = state.items.find((item) => item._id === lesson._id);
       if (!existingItem) {
         state.items.push({
           ...lesson,
           quantity: 1,
           addedAt: new Date().toISOString(),
         });
+        localStorage.setItem("cart", JSON.stringify(state.items));
       }
     },
 
     UPDATE_QUANTITY(state, { lessonId, quantity }) {
-      const item = state.items.find((item) => item.id === lessonId);
+      const item = state.items.find((item) => item._id === lessonId);
       if (item) {
         item.quantity = quantity;
         localStorage.setItem("cart", JSON.stringify(state.items));
@@ -28,7 +29,7 @@ export default {
     },
 
     REMOVE_FROM_CART(state, lessonId) {
-      state.items = state.items.filter((item) => item.id !== lessonId);
+      state.items = state.items.filter((item) => item._id !== lessonId);
       localStorage.setItem("cart", JSON.stringify(state.items));
     },
 
@@ -58,18 +59,12 @@ export default {
       }
     },
 
-    addToCart({ commit, state }, lesson) {
+    addToCart({ commit }, lesson) {
       commit("ADD_TO_CART", lesson);
-      localStorage.setItem("cart", JSON.stringify(state.items));
     },
 
-    updateQuantity({ commit, state }, { lessonId, quantity }) {
-      const item = state.items.find((item) => item.id === lessonId);
-      if (item && quantity >= 1 && quantity <= item.spaces) {
-        commit("UPDATE_QUANTITY", { lessonId, quantity });
-      } else {
-        commit("SET_ERROR", "Invalid quantity update");
-      }
+    updateQuantity({ commit }, { lessonId, quantity }) {
+      commit("UPDATE_QUANTITY", { lessonId, quantity });
     },
 
     removeFromCart({ commit }, lessonId) {
@@ -80,36 +75,60 @@ export default {
       commit("CLEAR_CART");
     },
 
-    async checkout({ commit, state, getters }, customerInfo) {
+    async checkout({ commit, state }, customerInfo) {
       try {
         commit("SET_LOADING", true);
         commit("SET_ERROR", null);
 
-        // Create order object
-        const order = {
-          orderId: `ORD-${Date.now()}`,
-          orderDate: new Date().toISOString(),
-          items: [...state.items],
-          customer: customerInfo,
-          subtotal: getters.cartTotal,
-          total: getters.cartTotal,
-          status: "completed",
+        // 1. Place order
+        const orderData = {
+          name: customerInfo.name,
+          phone: customerInfo.phone,
+          lessons: state.items.map((item) => ({
+            lessonId: item._id,
+            spaces: item.quantity || 1,
+          })),
         };
 
-        // Simulate API call to process order
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        const orderResponse = await fetch(
+          `${process.env.VUE_APP_API_URL}/orders`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(orderData),
+          }
+        );
 
-        alert("Order processed successfully!");
+        const orderResult = await orderResponse.json();
 
-        // Clear the cart after successful checkout
-        commit("CLEAR_CART");
+        if (orderResult.success) {
+          // 2. Update spaces for each lesson
+          for (const item of state.items) {
+            await fetch(`${process.env.VUE_APP_API_URL}/lessons/${item._id}`, {
+              method: "PUT",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                spaces: item.spaces - (item.quantity || 1),
+              }),
+            });
+          }
 
-        return {
-          success: true,
-          order,
-        };
+          alert("Order placed successfully!");
+
+          commit("CLEAR_CART");
+          return {
+            success: true,
+            order: orderResult,
+          };
+        } else {
+          throw new Error(orderResult.error || "Failed to process order");
+        }
       } catch (error) {
-        commit("SET_ERROR", "Checkout failed. Please try again.");
+        commit("SET_ERROR", error.message);
         return {
           success: false,
           error: error.message,
@@ -122,24 +141,19 @@ export default {
 
   getters: {
     cartItems: (state) => state.items,
-
     sortedCartItems: (state) => {
       return [...state.items].sort((a, b) => {
         return new Date(b.addedAt) - new Date(a.addedAt);
       });
     },
-
     hasItems: (state) => state.items.length > 0,
-
     isLessonInCart: (state) => (lessonId) => {
-      return state.items.some((item) => item.id === lessonId);
+      return state.items.some((item) => item._id === lessonId);
     },
-
     cartItemCount: (state) => state.items.length,
-
     cartTotal: (state) => {
       return state.items.reduce(
-        (total, item) => total + item.price * item.quantity,
+        (total, item) => total + item.price * (item.quantity || 1),
         0
       );
     },
