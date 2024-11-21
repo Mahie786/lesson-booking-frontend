@@ -1,5 +1,4 @@
 import { createRouter, createWebHashHistory } from "vue-router";
-import Home from "../views/Home.vue";
 
 const routes = [
   {
@@ -11,11 +10,6 @@ const routes = [
     name: "Cart",
     // Lazy loading the cart component
     component: () => import("../views/Cart.vue"),
-  },
-  {
-    path: "/checkout",
-    name: "Checkout",
-    component: () => import("../views/Checkout.vue"),
   },
   {
     path: "/lessons",
