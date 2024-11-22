@@ -59,15 +59,6 @@
 
             <!-- Price Summary -->
             <div class="price-summary mb-4">
-              <!-- <div class="d-flex justify-content-between mb-2">
-                <span class="text-muted">Subtotal</span>
-                <span>{{ formattedCartTotal }}</span>
-              </div> -->
-              <!-- <div class="d-flex justify-content-between mb-2">
-                <span class="text-muted">VAT (20%)</span>
-                <span>{{ formattedTax }}</span>
-              </div> -->
-              <!-- <hr /> -->
               <div class="d-flex justify-content-between mb-3">
                 <span class="fw-bold">Total</span>
                 <span class="fw-bold">£{{ cartTotal }}</span>
@@ -93,6 +84,7 @@
                 <input
                   type="tel"
                   v-model="checkoutForm.phone"
+                  @input="validatePhone"
                   class="form-control"
                   :class="{ 'is-invalid': errors.phone }"
                   required
@@ -149,11 +141,10 @@ export default {
 
     isFormValid() {
       return (
-        // this.checkoutForm.name &&
-        // this.checkoutForm.phone &&
-        // !this.errors.name &&
-        // !this.errors.phone
-        true
+        this.checkoutForm.name &&
+        this.checkoutForm.phone &&
+        !this.errors.name &&
+        !this.errors.phone
       );
     },
   },
@@ -161,30 +152,24 @@ export default {
   methods: {
     ...mapActions("cart", ["removeFromCart", "clearCart"]),
 
-    async handleCheckout() {
-      if (!this.validateForm()) return;
+    // Helper function to extract only digits from phone number
+    digitsOnly(phone) {
+      return phone.replace(/\D/g, "");
+    },
 
-      try {
-        const customerInfo = {
-          name: this.checkoutForm.name,
-          phone: this.checkoutForm.phone,
-          checkoutDate: new Date().toISOString(),
-        };
+    validatePhone() {
+      const phoneRegex = /^[\d\s\-+()]{8,20}$/;
+      const phone = this.checkoutForm.phone.trim();
+      const digits = this.digitsOnly(phone);
 
-        const result = await this.$store.dispatch("cart/checkout", customerInfo);
-
-        if (result.success) {
-          // Show success message
-          this.$router.push({
-            name: "checkout-success",
-            params: { orderId: result.order.orderId },
-          });
-        } else {
-          // Handle error
-          console.error("Checkout failed:", result.error);
-        }
-      } catch (error) {
-        console.error("Checkout error:", error);
+      if (!phone) {
+        this.errors.phone = "Phone number is required";
+      } else if (!phoneRegex.test(phone)) {
+        this.errors.phone = "Please enter a valid phone number";
+      } else if (digits.length < 8 || digits.length > 15) {
+        this.errors.phone = "Phone number must be between 8 and 15 digits";
+      } else {
+        this.errors.phone = "";
       }
     },
     validateForm() {
@@ -203,15 +188,11 @@ export default {
         isValid = false;
       }
 
-      // Phone validation
-      // const phoneRegex = /^[0-9]{10,}$/;
-      // if (!this.checkoutForm.phone.trim()) {
-      //   this.errors.phone = "Phone number is required";
-      //   isValid = false;
-      // } else if (!phoneRegex.test(this.checkoutForm.phone)) {
-      //   this.errors.phone = "Please enter a valid phone number";
-      //   isValid = false;
-      // }
+      // Phone validation through separate method
+      this.validatePhone();
+      if (this.errors.phone) {
+        isValid = false;
+      }
 
       return isValid;
     },
@@ -229,18 +210,15 @@ export default {
 
       this.loading = true;
       try {
-        // Prepare order data according to required format
         const customerInfo = {
           name: this.checkoutForm.name,
           phone: this.checkoutForm.phone,
         };
 
-        // Dispatch checkout action
         const result = await this.$store.dispatch("cart/checkout", customerInfo);
 
         if (result.success) {
           this.checkoutForm = { name: "", phone: "" };
-          // this.$router.push("/lessons");
         } else {
           throw new Error(result.error || "Checkout failed");
         }
