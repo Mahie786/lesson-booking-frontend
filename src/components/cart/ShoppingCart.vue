@@ -72,6 +72,7 @@
                 <input
                   type="text"
                   v-model="checkoutForm.name"
+                  @input="validateName"
                   class="form-control"
                   :class="{ 'is-invalid': errors.name }"
                   required
@@ -157,6 +158,17 @@ export default {
       return phone.replace(/\D/g, "");
     },
 
+    validateName() {
+      const name = this.checkoutForm.name.trim();
+
+      if (!name) {
+        this.errors.name = "Name is required";
+      } else if (name.length < 2) {
+        this.errors.name = "Name must be at least 2 characters";
+      } else {
+        this.errors.name = "";
+      }
+    },
     validatePhone() {
       const phoneRegex = /^[\d\s\-+()]{8,20}$/;
       const phone = this.checkoutForm.phone.trim();
@@ -172,6 +184,7 @@ export default {
         this.errors.phone = "";
       }
     },
+
     validateForm() {
       let isValid = true;
       this.errors = {
@@ -179,12 +192,9 @@ export default {
         phone: "",
       };
 
-      // Name validation
-      if (!this.checkoutForm.name.trim()) {
-        this.errors.name = "Name is required";
-        isValid = false;
-      } else if (this.checkoutForm.name.length < 2) {
-        this.errors.name = "Name must be at least 2 characters";
+      // Name validation through separate method
+      this.validateName();
+      if (this.errors.name) {
         isValid = false;
       }
 
