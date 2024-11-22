@@ -4,7 +4,7 @@
       <!-- Brand -->
       <router-link class="navbar-brand fw-bold text-dark" to="/lessons">
         <i class="bi bi-book-half me-2"></i>
-        Lesson Booking
+        School Lessons
       </router-link>
 
       <!-- Navbar toggler for mobile -->
