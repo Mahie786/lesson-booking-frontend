@@ -1,12 +1,14 @@
 export default {
   namespaced: true,
 
+  // State object containing the cart's data
   state: {
     items: [],
     loading: false,
     error: null,
   },
 
+  // Mutations for synchronously modifying the state
   mutations: {
     ADD_TO_CART(state, lesson) {
       const existingItem = state.items.find((item) => item._id === lesson._id);
@@ -16,6 +18,7 @@ export default {
           quantity: 1,
           addedAt: new Date().toISOString(),
         });
+        // Persist cart to localStorage
         localStorage.setItem("cart", JSON.stringify(state.items));
       }
     },
@@ -24,17 +27,20 @@ export default {
       const item = state.items.find((item) => item._id === lessonId);
       if (item) {
         item.quantity = quantity;
+        // Update localStorage
         localStorage.setItem("cart", JSON.stringify(state.items));
       }
     },
 
     REMOVE_FROM_CART(state, lessonId) {
       state.items = state.items.filter((item) => item._id !== lessonId);
+      // Update localStorage
       localStorage.setItem("cart", JSON.stringify(state.items));
     },
 
     CLEAR_CART(state) {
       state.items = [];
+      // Remove cart from localStorage
       localStorage.removeItem("cart");
     },
 
@@ -51,7 +57,9 @@ export default {
     },
   },
 
+  // Actions for handling asynchronous operations and complex logic
   actions: {
+    // Initialize cart from localStorage
     initializeCart({ commit }) {
       const savedCart = localStorage.getItem("cart");
       if (savedCart) {
@@ -75,6 +83,7 @@ export default {
       commit("CLEAR_CART");
     },
 
+    // Checkout process
     async checkout({ commit, state }, customerInfo) {
       try {
         commit("SET_LOADING", true);
@@ -139,6 +148,7 @@ export default {
     },
   },
 
+  // Getters for deriving data from the state
   getters: {
     cartItems: (state) => state.items,
     sortedCartItems: (state) => {

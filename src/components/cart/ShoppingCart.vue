@@ -1,5 +1,6 @@
 <template>
   <div class="container py-4">
+    <!-- Cart header with title and clear cart button -->
     <div class="d-flex justify-content-between align-items-center mb-4">
       <h2 class="fw-bold mb-0">Shopping Cart</h2>
       <button v-if="hasItems" @click="clearCart" class="btn btn-outline-danger btn-sm">
@@ -29,12 +30,14 @@
       </router-link>
     </div>
 
-    <!-- Cart Items -->
+    <!-- Cart Items and Checkout Section -->
     <div v-else class="row">
+      <!-- Cart Items List -->
       <div class="col-lg-8">
         <div class="card border-0 shadow-sm mb-4">
           <div class="card-body">
             <div class="cart-items">
+              <!-- Individual Cart Item -->
               <div
                 v-for="item in sortedCartItems"
                 :key="item.id"
@@ -67,6 +70,7 @@
 
             <!-- Checkout Form -->
             <form @submit.prevent="handleCheckout">
+              <!-- Name Input -->
               <div class="mb-3">
                 <label class="form-label">Name</label>
                 <input
@@ -80,6 +84,7 @@
                 <div class="invalid-feedback">{{ errors.name }}</div>
               </div>
 
+              <!-- Phone Input -->
               <div class="mb-3">
                 <label class="form-label">Phone</label>
                 <input
@@ -93,6 +98,7 @@
                 <div class="invalid-feedback">{{ errors.phone }}</div>
               </div>
 
+              <!-- Checkout Button -->
               <div class="d-grid gap-2">
                 <button
                   type="submit"
@@ -140,6 +146,7 @@ export default {
     ...mapState("cart", ["error"]),
     ...mapGetters("cart", ["sortedCartItems", "hasItems", "cartItemCount", "cartTotal"]),
 
+    // Check if the form is valid
     isFormValid() {
       return (
         this.checkoutForm.name &&
@@ -158,6 +165,7 @@ export default {
       return phone.replace(/\D/g, "");
     },
 
+    // Validate name input
     validateName() {
       const name = this.checkoutForm.name.trim();
 
@@ -169,6 +177,8 @@ export default {
         this.errors.name = "";
       }
     },
+
+    // Validate phone input
     validatePhone() {
       const phoneRegex = /^[\d\s\-+()]{8,20}$/;
       const phone = this.checkoutForm.phone.trim();
@@ -185,6 +195,7 @@ export default {
       }
     },
 
+    // Validate entire form
     validateForm() {
       let isValid = true;
       this.errors = {
@@ -192,13 +203,11 @@ export default {
         phone: "",
       };
 
-      // Name validation through separate method
       this.validateName();
       if (this.errors.name) {
         isValid = false;
       }
 
-      // Phone validation through separate method
       this.validatePhone();
       if (this.errors.phone) {
         isValid = false;
@@ -207,6 +216,7 @@ export default {
       return isValid;
     },
 
+    // Handle removing an item from the cart
     async handleRemoveItem(item) {
       try {
         await this.removeFromCart(item.id);
@@ -215,6 +225,7 @@ export default {
       }
     },
 
+    // Handle checkout process
     async handleCheckout() {
       if (!this.validateForm()) return;
 
@@ -244,6 +255,7 @@ export default {
 </script>
 
 <style scoped>
+/* Styles for cart items */
 .cart-item {
   transition: all 0.2s ease;
   border: 1px solid rgba(0, 0, 0, 0.05);
@@ -255,12 +267,14 @@ export default {
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
+/* Styles for price summary */
 .price-summary {
   background-color: #f8f9fa;
   padding: 1rem;
   border-radius: 8px;
 }
 
+/* Styles for primary button */
 .btn-primary {
   background: linear-gradient(45deg, #007bff, #0056b3);
   border: none;
@@ -272,6 +286,7 @@ export default {
   transform: translateY(-2px);
 }
 
+/* Styles for danger outline button */
 .btn-outline-danger {
   border-width: 1px;
   transition: all 0.3s ease;
@@ -283,6 +298,7 @@ export default {
   transform: translateY(-2px);
 }
 
+/* Responsive adjustments */
 @media (max-width: 992px) {
   .col-lg-4 {
     margin-top: 2rem;

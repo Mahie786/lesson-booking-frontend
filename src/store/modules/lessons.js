@@ -1,6 +1,7 @@
 export default {
   namespaced: true,
 
+  // State object containing the store's data
   state: {
     lessons: [],
     loading: false,
@@ -10,6 +11,7 @@ export default {
     sortOrder: "asc",
   },
 
+  // Mutations for synchronously modifying the state
   mutations: {
     SET_LESSONS(state, lessons) {
       state.lessons = lessons;
@@ -35,21 +37,21 @@ export default {
     },
   },
 
+  // Actions for handling asynchronous operations and complex logic
   actions: {
+    // Initialize lessons (likely used when hydrating the store)
     initializeLessons({ commit }, lessons) {
       commit("SET_LESSONS", lessons);
     },
 
+    // Fetch lessons from the API
     async fetchLessons({ commit }) {
       commit("SET_LOADING", true);
       commit("SET_ERROR", null);
       try {
-        // Update URL to match your API
         const response = await fetch(`${process.env.VUE_APP_API_URL}/lessons`);
         const result = (await response.json()) || {};
-        console.log("result", result);
         if (result?.success) {
-          // Access the data array from the API response
           commit("SET_LESSONS", result?.data);
         } else {
           throw new Error("Failed to fetch lessons");
@@ -62,6 +64,7 @@ export default {
       }
     },
 
+    // Update search term and fetch filtered lessons
     async updateSearch({ commit }, term) {
       commit("SET_LOADING", true);
       commit("SET_ERROR", null);
@@ -71,10 +74,8 @@ export default {
         const response = await fetch(
           `${process.env.VUE_APP_API_URL}/lessons/search?searchString=${term}`
         );
-
         const result = (await response.json()) || {};
         if (result?.success) {
-          // Access the data array from the API response
           commit("SET_LESSONS", result?.data);
         } else {
           throw new Error("Failed to fetch lessons");
@@ -87,11 +88,12 @@ export default {
       }
     },
 
+    // Update sort criteria
     updateSort({ commit }, sortData) {
-      console.log("Sort data:", sortData);
       commit("SET_SORT", sortData);
     },
 
+    // Decrement spaces for a lesson and update on the server
     async decrementSpaces({ commit }, lessonId) {
       try {
         commit("DECREMENT_SPACES", lessonId);
@@ -109,7 +111,6 @@ export default {
           }
         );
 
-        console.log("response", response);
         const data = await response?.data?.json();
         commit("SET_LESSONS", data);
       } catch (error) {
@@ -121,6 +122,7 @@ export default {
     },
   },
 
+  // Getters for deriving data from the state
   getters: {
     filteredLessons: (state) => {
       let filtered = [...state.lessons];
