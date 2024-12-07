@@ -113,19 +113,6 @@ export default {
         const orderResult = await orderResponse.json();
 
         if (orderResult.success) {
-          // 2. Update spaces for each lesson
-          for (const item of state.items) {
-            await fetch(`${process.env.VUE_APP_API_URL}/lessons/${item._id}`, {
-              method: "PUT",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                spaces: item.spaces - (item.quantity || 1),
-              }),
-            });
-          }
-
           alert("Order placed successfully!");
 
           commit("CLEAR_CART");
